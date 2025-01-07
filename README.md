@@ -1,0 +1,1 @@
+This project is an interactive web-based Sudoku solver designed to assist users in solving Sudoku puzzles effortlessly. The app features a simple and clean user interface built with HTML, CSS, and JavaScript, offering a seamless experience for users of all skill levels.
