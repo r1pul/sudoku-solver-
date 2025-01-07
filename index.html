@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku Solver</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+  >
+  <style>
+    body {
+      font-family: Calibri, sans-serif;
+      background-color: violet;
+    }
+    #container {
+      margin-top: 50px;
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 1.5em;
+      margin: 20px auto;
+    }
+    td {
+      border: 1px solid #000;
+      height: 2.5em;
+      width: 2.5em;
+      text-align: center;
+      vertical-align: middle;
+      background-color: #498ed3;
+    }
+    #timer {
+      font-size: 1.5em;
+      margin-bottom: 15px;
+    }
+    .btn {
+      margin: 5px;
+    }
+    /* Light blue navbar */
+    .navbar {
+      background-color: #add8e6;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar using Bootstrap -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sudoku Solver</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <button id="solve-button" class="btn btn-primary">Solve</button>
+          </li>
+          <li class="nav-item">
+            <button id="clear-button" class="btn btn-danger">Clear Board</button>
+          </li>
+          <li class="nav-item">
+            <button id="start-timer" class="btn btn-success">Start Timer</button>
+          </li>
+          <li class="nav-item">
+            <button id="stop-timer" class="btn btn-warning">Stop Timer</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Container for Sudoku board and timer -->
+  <div id="container" class="container">
+    <!-- Difficulty Buttons -->
+    <div class="mt-3">
+      <button id="easy-button" class="btn btn-secondary">Easy</button>
+      <button id="medium-button" class="btn btn-secondary">Medium</button>
+      <button id="hard-button" class="btn btn-secondary">Hard</button>
+    </div>
+
+    <!-- Timer -->
+    <div id="timer">Time: 0:00</div>
+
+    <!-- Sudoku Board -->
+    <table id="sudoku-board">
+      <tbody>
+        <!-- 9x9 Sudoku Grid -->
+        <script>
+          for (let i = 0; i < 9; i++) {
+            document.write("<tr>");
+            for (let j = 0; j < 9; j++) {
+              document.write('<td contenteditable="true"></td>');
+            }
+            document.write("</tr>");
+          }
+        </script>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    "use strict";
+
+    // Timer variables
+    let timerInterval;
+    let elapsedSeconds = 0;
+
+    // Prebuilt puzzles
+    const EASY_PUZZLE = "1-58-2----9--764-52--4--819-19--73-6762-83-9-----61-5---76---3-43--2-5-16--3-89--";
+    const MEDIUM_PUZZLE = "-3-5--8-45-42---1---8--9---79-8-61-3-----54---5------78-----7-2---7-46--61-3--5--";
+    const HARD_PUZZLE = "8----------36------7--9-2---5---7-------457-----1---3---1----68--85---1--9----4--";
+
+    // Function to start the timer
+    function startTimer() {
+      stopTimer(); // Ensure no duplicate timers are running
+      elapsedSeconds = 0;
+      document.getElementById("timer").innerText = formatTime(elapsedSeconds);
+      timerInterval = setInterval(function () {
+        elapsedSeconds++;
+        document.getElementById("timer").innerText = formatTime(elapsedSeconds);
+      }, 1000);
+    }
+
+    // Function to stop the timer
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    // Function to format time as MM:SS
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `Time: ${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+    }
+
+    // Function to reset the timer
+    function resetTimer() {
+      stopTimer();
+      elapsedSeconds = 0;
+      document.getElementById("timer").innerText = "Time: 0:00";
+    }
+
+    // Populate board with a prebuilt puzzle
+    function loadPuzzle(puzzleString) {
+      const cells = puzzleString.split("");
+      const tds = document.getElementsByTagName("td");
+      for (let i = 0; i < tds.length; i++) {
+        tds[i].innerText = cells[i] === "-" ? "" : cells[i];
+      }
+    }
+
+    // Sudoku Solver logic
+    document.getElementById("solve-button").addEventListener("click", function () {
+      const boardString = boardToString();
+      const solution = SudokuSolver.solve(boardString);
+      if (solution) {
+        stringToBoard(solution);
+        stopTimer(); // Stop the timer when solved
+      } else {
+        alert("Invalid board!");
+        stopTimer();
+      }
+    });
+
+    document.getElementById("clear-button").addEventListener("click", function () {
+      clearBoard();
+      resetTimer(); // Reset the timer when the board is cleared
+    });
+
+    document.getElementById("start-timer").addEventListener("click", startTimer);
+    document.getElementById("stop-timer").addEventListener("click", stopTimer);
+
+    document.getElementById("easy-button").addEventListener("click", function () {
+      loadPuzzle(EASY_PUZZLE);
+    });
+
+    document.getElementById("medium-button").addEventListener("click", function () {
+      loadPuzzle(MEDIUM_PUZZLE);
+    });
+
+    document.getElementById("hard-button").addEventListener("click", function () {
+      loadPuzzle(HARD_PUZZLE);
+    });
+
+    // Clear the board
+    function clearBoard() {
+      const tds = document.getElementsByTagName("td");
+      for (let i = 0; i < tds.length; i++) {
+        tds[i].innerText = "";
+      }
+    }
+
+    // Convert board to string
+    function boardToString() {
+      let string = "";
+      const validNum = /[1-9]/;
+      const tds = document.getElementsByTagName("td");
+      for (let i = 0; i < tds.length; i++) {
+        if (validNum.test(tds[i].innerText[0])) {
+          string += tds[i].innerText;
+        } else {
+          string += "-";
+        }
+      }
+      return string;
+    }
+
+    // Convert string back to board
+    function stringToBoard(string) {
+      const validNum = /[1-9]/;
+      const cells = string.split("");
+      const tds = document.getElementsByTagName("td");
+      for (let i = 0; i < tds.length; i++) {
+        const currentCell = cells.shift();
+        if (validNum.test(currentCell)) {
+          tds[i].innerText = currentCell;
+        }
+      }
+    }
+
+    // Sudoku Solver
+    const SudokuSolver = {
+      solve: function (boardString) {
+        const board = boardString.split("").map((char) => (char === "-" ? 0 : parseInt(char)));
+        if (this.solveBoard(board)) {
+          return board.join("");
+        } else {
+          return null; // Return null if the board cannot be solved
+        }
+      },
+
+      solveBoard: function (board) {
+        const emptyIndex = board.indexOf(0);
+        if (emptyIndex === -1) return true; // Board solved
+
+        const row = Math.floor(emptyIndex / 9);
+        const col = emptyIndex % 9;
+
+        for (let num = 1; num <= 9; num++) {
+          if (this.isValidMove(board, row, col, num)) {
+            board[emptyIndex] = num;
+            if (this.solveBoard(board)) return true;
+            board[emptyIndex] = 0;
+          }
+        }
+
+        return false; // Backtrack
+      },
+
+      isValidMove: function (board, row, col, num) {
+        // Check row
+        for (let i = 0; i < 9; i++) {
+          if (board[row * 9 + i] === num) return false;
+        }
+
+        // Check column
+        for (let i = 0; i < 9; i++) {
+          if (board[col + i * 9] === num) return false;
+        }
+
+        // Check 3x3 grid
+        const startRow = Math.floor(row / 3) * 3;
+        const startCol = Math.floor(col / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[(startRow + i) * 9 + (startCol + j)] === num) return false;
+          }
+        }
+
+        return true;
+      },
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
